@@ -71,8 +71,10 @@ class Aoe_Profiler_Model_Run extends Mage_Core_Model_Abstract
             $this->createHierarchyArray($this->treeData, $data['level'], $uniqueId);
         }
 
-        $this->treeData = end($this->treeData);
-        $this->updateValues($this->treeData);
+        if ($this->treeData) {
+            $this->treeData = end($this->treeData);
+            $this->updateValues($this->treeData);
+        }
 
         $this->calcRelativeValues();
 
@@ -128,13 +130,23 @@ class Aoe_Profiler_Model_Run extends Mage_Core_Model_Abstract
     {
         foreach ($this->stackLog as $key => $value) {
             foreach ($this->metrics as $metric) {
+                $val = $this->stackLog['timetracker_0'][$metric . '_total'];
                 foreach (array('own', 'sub', 'total') as $column) {
                     if (!isset($this->stackLog[$key][$metric . '_' . $column])) {
                         continue;
                     }
-                    $this->stackLog[$key][$metric . '_rel_' . $column] = $this->stackLog[$key][$metric . '_' . $column] / $this->stackLog['timetracker_0'][$metric . '_total'];
+
+                    if ($val == 0) {
+                        $this->stackLog[$key][$metric . '_rel_' . $column] = PHP_INT_MAX;
+                    } else {
+                        $this->stackLog[$key][$metric . '_rel_' . $column] = $this->stackLog[$key][$metric . '_' . $column] / $val;
+                    }
                 }
-                $this->stackLog[$key][$metric . '_rel_offset'] = $this->stackLog[$key][$metric . '_start_relative'] / $this->stackLog['timetracker_0'][$metric . '_total'];
+                if ($val == 0) {
+                    $this->stackLog[$key][$metric . '_rel_offset'] = PHP_INT_MAX;
+                } else {
+                    $this->stackLog[$key][$metric . '_rel_offset'] = $this->stackLog[$key][$metric . '_start_relative'] / $val;
+                }
             }
         }
     }
@@ -180,9 +192,6 @@ class Aoe_Profiler_Model_Run extends Mage_Core_Model_Abstract
     {
         $result = parent::_afterLoad();
         $this->stackLog = unserialize($this->getStackData());
-        if ($this->stackLog === false) {
-            Mage::throwException('Error while unserializing data');
-        }
         return $result;
     }
 

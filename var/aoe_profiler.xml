@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!-- See sample file for in depth notes on these settings. -->
+<config>
+    <aoe_profiler>
+        <trigger>parameter</trigger><!-- 'always', 'parameter', or 'never' -->
+        <enableFilters>1</enableFilters><!-- 1 Apply Filters, 0 to log everything -->
+        <filters>
+            <sampling>100</sampling><!-- log every request -->
+            <timeThreshold>0</timeThreshold><!-- requests longer than N seconds are logged, 0 logs everything -->
+            <memoryThreshold>0</memoryThreshold><!-- in bytesk, 0 implies no memory thresholds, so all requests are logged -->
+            <requestUriWhiteList><![CDATA[]]></requestUriWhiteList>
+            <requestUriBlackList><![CDATA[]]></requestUriBlackList>
+        </filters>
+        <captureModelInfo>1</captureModelInfo>
+        <captureBacktraces>1</captureBacktraces>
+    </aoe_profiler>
+</config>
