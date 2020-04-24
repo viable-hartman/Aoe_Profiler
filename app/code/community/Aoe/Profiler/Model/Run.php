@@ -47,6 +47,12 @@ class Aoe_Profiler_Model_Run extends Mage_Core_Model_Abstract
 
     public function populateMetadata()
     {
+        $this->setUserAgent(Mage::helper('core/http')->getHttpUserAgent());
+        $this->setRequestMethod($this->getMethodMetadata());
+        $this->setRequestData($this->getReqDataMetadata());
+        $this->setRemoteAddress($this->getRemoteAddressMetadata());
+        $this->setHostname($this->getHostnameMetadata());
+
         $this->setUrl(Mage::app()->getRequest()->getRequestUri());
         $this->setRoute(Mage::app()->getFrontController()->getAction()->getFullActionName());
         $this->setSessionId(Mage::getSingleton('core/session')->getSessionId());
@@ -54,6 +60,47 @@ class Aoe_Profiler_Model_Run extends Mage_Core_Model_Abstract
         $totals = Varien_Profiler::getTotals();
         $this->setTotalTime($totals['time']);
         $this->setTotalMemory((float)$totals['realmem']/(1024*1024));
+    }
+
+    public function getRemoteAddressMetadata() {
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+            return $_SERVER['REMOTE_ADDR'];
+        }
+        return 'Could not determine remote address.';
+    }
+
+    public function getHostnameMetadata() {
+        if (gethostname() !== false) {
+            return gethostname();
+        } else {
+            return 'Could not determine hostname.';
+        }
+    }
+
+    public function getReqDataMetadata() {
+        $requestData = array();
+        if (!empty($_GET)) {
+            $requestData[] = '  GET|'.substr(@json_encode($_GET), 0, 1000);
+        }
+        if (!empty($_POST)) {
+            $requestData[] = '  POST|'.substr(@json_encode($_POST), 0, 1000);
+        }
+        if (!empty($_FILES)) {
+            $requestData[] = '  FILES|'.substr(@json_encode($_FILES), 0, 1000);
+        }
+        if (Mage::registry('raw_post_data')) {
+            $requestData[] = '  RAWPOST|'.substr(Mage::registry('raw_post_data'), 0, 1000);
+        }
+        return $requestData ? implode("\n", $requestData) : 'No Data.';
+    }
+
+    public function getMethodMetadata() {
+        if (!empty($_SERVER['REQUEST_METHOD'])) {
+            return $_SERVER['REQUEST_METHOD'];
+        }
+        return php_sapi_name();
     }
 
     public function getStackLog()
